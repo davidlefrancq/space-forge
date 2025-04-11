@@ -1,13 +1,12 @@
 use actix_web::{get, post, web, App, HttpServer, Responder, HttpResponse};
 use serde::Deserialize;
-use std::fs;
+use chrono::{DateTime, Utc};
 
 mod bo;
 mod bll;
 mod dal;
 
 use bll::simulation::Simulation;
-use bo::planet::Planet;
 
 #[get("/ping")]
 async fn ping() -> impl Responder {
@@ -16,24 +15,21 @@ async fn ping() -> impl Responder {
 
 #[derive(Deserialize)]
 struct SimulateParams {
-  mars_mass: Option<f64>,     // à utiliser plus tard
-  duration_days: u32
+  date: String,
 }
 
 #[post("/simulate")]
 async fn simulate(params: web::Json<SimulateParams>) -> impl Responder {
-  let planets_path = "data/planets.json";
-
-  let mut planets = Simulation::load_planets(planets_path);
-
-  // TODO : appliquer la masse personnalisée de Mars si fournie
-  if let Some(mass) = params.mars_mass {
-    if let Some(mars) = planets.iter_mut().find(|p| p.name == "Mars") {
-      mars.mass = mass;
+  let target_date = match DateTime::parse_from_rfc3339(&params.date) {
+    Ok(parsed) => parsed.with_timezone(&Utc),
+    Err(e) => {
+      return HttpResponse::BadRequest().body(format!("Date invalide : {e}"));
     }
-  }
+  };
 
-  let result: Vec<Planet> = Simulation::run(&planets, params.duration_days);
+  let planets_path = "data/planets.json";
+  let planets = Simulation::load_planets(planets_path);
+  let result = Simulation::run(&planets, target_date);
 
   HttpResponse::Ok().json(result)
 }
