@@ -1,4 +1,5 @@
 use actix_web::{get, post, web, App, HttpServer, Responder, HttpResponse};
+use actix_cors::Cors;
 use serde::Deserialize;
 use chrono::{DateTime, Utc};
 
@@ -40,6 +41,13 @@ async fn main() -> std::io::Result<()> {
 
   HttpServer::new(|| {
     App::new()
+      .wrap(
+        Cors::default()
+            .allowed_origin("http://localhost:3000")  // <-- ton origine Next.js
+            .allowed_methods(vec!["GET", "POST"])
+            .allowed_headers(vec!["Content-Type"])
+            .supports_credentials(),
+      )
       .service(ping)
       .service(simulate)
   })
