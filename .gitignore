@@ -1,0 +1,32 @@
+# === Node / React / Vite (ui/) ===
+ui/node_modules/
+ui/dist/
+ui/.vite/
+ui/.env.local
+ui/.env.*
+ui/npm-debug.log*
+ui/yarn-debug.log*
+ui/yarn-error.log*
+
+# === Rust (api/) ===
+api/target/
+api/Cargo.lock
+
+# === OS / IDE ===
+.DS_Store
+*.swp
+*.swo
+*.swn
+*.bak
+*.tmp
+*.log
+*.old
+
+# === VSCode / JetBrains ===
+.vscode/
+.idea/
+
+# === Global ===
+*.log
+*.cache
+*.rs.bk
