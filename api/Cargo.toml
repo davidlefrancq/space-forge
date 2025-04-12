@@ -8,7 +8,13 @@ actix-cors = "0.7.1"
 actix-web = "4.10.2"
 anyhow = "1.0.97"
 chrono = { version = "0.4.40", features = ["serde", "clock"] }
+dotenvy = "0.15.7"
 nalgebra = "0.33.2"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 tokio = { version = "1.44.2", features = ["full"] }
+tracing = "0.1.41"
+tracing-appender = "0.2.3"
+tracing-log = "0.2.0"
+tracing-serde = "0.2.0"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json"] }
