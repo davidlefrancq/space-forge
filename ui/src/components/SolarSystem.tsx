@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { simulate } from '../lib/api';
 import PlanetCard from './PlanetCard';
+import OrbitCanvas from './OrbitCanvas';
 
 interface Planet {
   name: string;
@@ -46,6 +47,10 @@ const SolarSystem = () => {
       </div>
 
       {loading && <p className="mt-4">Chargement...</p>}
+
+      <div className="mt-6">
+        <OrbitCanvas planets={planets} />
+      </div>
 
       <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
         {planets.map((planet) => (

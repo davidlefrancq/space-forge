@@ -51,7 +51,7 @@ async fn main() -> std::io::Result<()> {
       .service(ping)
       .service(simulate)
   })
-  .bind(("127.0.0.1", 8080))?
+  .bind(("localhost", 8080))?
   .run()
   .await
 }
