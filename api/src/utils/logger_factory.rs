@@ -1,4 +1,3 @@
-use std::env;
 pub use crate::utils::logger::{Logger, StdoutLogger, JsonLogger, NoopLogger, LogstashLogger};
 pub struct LoggerFactory;
 
