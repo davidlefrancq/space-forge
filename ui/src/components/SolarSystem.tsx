@@ -15,7 +15,7 @@ interface Planet {
 const SolarSystem = () => {
   const [date, setDate] = useState<Date>(new Date('2025-04-11T00:00:00Z'));
   const [planets, setPlanets] = useState<Planet[]>([]);
-  const [orbitHistory, setOrbitHistory] = useState<Record<string, [number, number][]>>({});
+  const [orbitHistory, setOrbitHistory] = useState<Record<string, [number, number, number][]>>({});
   const [started, setStarted] = useState(false);
 
   useEffect(() => {
@@ -40,9 +40,9 @@ const SolarSystem = () => {
       setOrbitHistory(prev => {
         const newHistory = { ...prev };
         result.forEach((planet: Planet) => {
-          const [x, y] = planet.position;
+          const [x, y, z] = planet.position;
           if (!newHistory[planet.name]) newHistory[planet.name] = [];
-          newHistory[planet.name].push([x, y]);
+          newHistory[planet.name].push([x, y, z]);
         });
         return newHistory;
       });
@@ -58,7 +58,7 @@ const SolarSystem = () => {
 
   return (
     <div className="p-6 text-white">
-      {started && <SolarSystem3D planets={planets} />}
+      {started && <SolarSystem3D planets={planets} orbitHistory={orbitHistory} />}
     </div>
   );
 };

@@ -1,14 +1,12 @@
 'use client';
 
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, Line, useTexture } from '@react-three/drei';
 import { Texture } from 'three';
-import { useTexture } from '@react-three/drei';
 
 const POSITION_SCALE = 1e9;
 const RADIUS_SCALE = 1e6;
 const SUN_RADIUS_SCALE = 2e7;
-
 
 interface Planet {
   name: string;
@@ -18,9 +16,22 @@ interface Planet {
 
 interface SolarSystem3DProps {
   planets: Planet[];
+  orbitHistory?: Record<string, [number, number, number][]>;
 }
 
-function SolarSystemScene({ planets }: { planets: Planet[] }) {
+function SolarSystemScene({ planets, orbitHistory }: SolarSystem3DProps) {
+
+  // Couleur simple par nom
+  const colors: Record<string, string> = {
+    Terre: 'blue',
+    Mars: 'red',
+    Mercure: 'gray',
+    Venus: 'yellow',
+    Jupiter: 'orange',
+    Saturne: 'khaki',
+    Uranus: 'cyan',
+    Neptune: 'purple',
+  };
 
   const textures: {
     [key: string]: Texture;
@@ -28,7 +39,7 @@ function SolarSystemScene({ planets }: { planets: Planet[] }) {
     Terre: useTexture('/textures/2k_earth_daymap.jpg'),
     Mars: useTexture('/textures/2k_mars.jpg'),
     Jupiter: useTexture('/textures/2k_jupiter.jpg'),
-    Vénus: useTexture('/textures/2k_venus_atmosphere.jpg'),
+    Venus: useTexture('/textures/2k_venus_atmosphere.jpg'),
     Mercure: useTexture('/textures/2k_mercury.jpg'),
     Saturne: useTexture('/textures/2k_saturn.jpg'),
     Uranus: useTexture('/textures/2k_uranus.jpg'),
@@ -42,12 +53,10 @@ function SolarSystemScene({ planets }: { planets: Planet[] }) {
   return (
     <>
       {/* Lumière générale et directionnelle */}
-      <ambientLight intensity={0.3} />
+      <ambientLight intensity={1} />
       <directionalLight
-        position={[0, 0, 100]}
-        intensity={1.5}
-        color="yellow"
-        castShadow
+        position={[0, 0, 500]}
+        intensity={0.5}
       />
 
       <OrbitControls enablePan enableZoom enableRotate />
@@ -63,31 +72,59 @@ function SolarSystemScene({ planets }: { planets: Planet[] }) {
       </mesh>
 
       {/* Planètes */}
-      {planets.map((planet) => (
-        planet.name !== 'Soleil' && <mesh
-          key={planet.name}
-          position={[
-            planet.position[0] / POSITION_SCALE,
-            planet.position[1] / POSITION_SCALE,
-            planet.position[2] / POSITION_SCALE,
-          ]}
-        >
-          <sphereGeometry args={[planet.radius / RADIUS_SCALE, 64, 64]} />
-          <meshStandardMaterial
-            map={textures[planet.name] || undefined}
-          />
-        </mesh>
-      ))}
+      {planets.map((planet) =>
+        planet.name !== 'Soleil' ? (
+          <mesh
+            key={planet.name}
+            position={[
+              planet.position[0] / POSITION_SCALE,
+              planet.position[1] / POSITION_SCALE,
+              planet.position[2] / POSITION_SCALE,
+            ]}
+          >
+            <sphereGeometry args={[planet.radius / RADIUS_SCALE, 64, 64]} />
+            <meshStandardMaterial map={textures[planet.name] || undefined} />
+          </mesh>
+        ) : null
+      )}
+
+      {/* Orbites */}
+      {orbitHistory &&
+        Object.entries(orbitHistory).map(([name, path]) => {
+          if (path.length < 2) return null; // ignorer si pas assez de points
+
+          const points: [number, number, number][] = path.map(
+            ([x, y, z]) => [x / POSITION_SCALE, y / POSITION_SCALE, z / POSITION_SCALE]
+          );
+
+          // Pour debug
+          console.log(`🌀 ${name} orbit with ${points.length} points`);
+          
+          return (
+            <Line
+              key={`orbit-${name}`}
+              points={points}
+              color={colors[name] || 'white'}
+              lineWidth={2}
+              transparent={false}
+              dashed={false}
+              opacity={1}
+            />
+          );
+        })}
     </>
   );
 }
 
 
-export default function SolarSystem3D({ planets }: SolarSystem3DProps) {
+export default function SolarSystem3D({ planets, orbitHistory }: SolarSystem3DProps) {
   return (
     <div className="w-full h-[600px] rounded-xl overflow-hidden shadow-lg">
-      <Canvas camera={{ position: [0, 0, 1000], near: 0.1, far: 1e7 }}>
-        <SolarSystemScene planets={planets} />
+      <Canvas
+        camera={{ position: [0, 0, 300], near: 0.1, far: 1e7 }}
+        style={{ background: 'black' }}
+      >
+        <SolarSystemScene planets={planets} orbitHistory={orbitHistory} />
       </Canvas>
     </div>
   );
