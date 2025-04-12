@@ -17,48 +17,49 @@ const SolarSystem = () => {
   const [planets, setPlanets] = useState<Planet[]>([]);
   const [orbitHistory, setOrbitHistory] = useState<Record<string, [number, number, number][]>>({});
   const [started, setStarted] = useState(false);
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
     if (!started) setStarted(true);
   }, []);
 
-  useEffect(() => {  
-    runLoop();
-  }, [started]);
-
   useEffect(() => {
-    if (started) {
-      runLoop();
-    }
-  }, [orbitHistory]);
+    const runLoop = async () => {
+        const isoDate = date.toISOString();
+        try {
+          const result: Planet[] = await simulate(isoDate);
+          setPlanets(result);
+          setOrbitHistory((prev) => {
+            const newHistory = { ...prev };
+            result.forEach((planet: Planet) => {
+              const [x, y, z] = planet.position;
+              if (!newHistory[planet.name]) newHistory[planet.name] = [];
+              newHistory[planet.name].push([x, y, z]);
+            });
+            return newHistory;
+          });
+          const passedTime = 1 * 24 * 60 * 60 * 1000;
+          setDate((d) => new Date(d.getTime() + passedTime));
+        } catch (err) {
+          console.error(err);
+        }
+    };
 
-  const runLoop = async () => {
-    const isoDate = date.toISOString();
-    try {
-      const result: Planet[] = await simulate(isoDate);
-      setPlanets(result);
-      setOrbitHistory(prev => {
-        const newHistory = { ...prev };
-        result.forEach((planet: Planet) => {
-          const [x, y, z] = planet.position;
-          if (!newHistory[planet.name]) newHistory[planet.name] = [];
-          newHistory[planet.name].push([x, y, z]);
-        });
-        return newHistory;
-      });
-      setDate(d => new Date(d.getTime() + 86400000)); // +1 jour
-    } catch (err) {
-      console.error(err);
-    }
+    if (started && !paused) runLoop();
 
-    // Attendre un minimum de temps si tu veux éviter une boucle trop rapide :
-    // await new Promise(res => setTimeout(res, 100)); // optionnel
-    // runLoop(); // boucle auto-déclenchée
-  };  
+  }, [started, paused, date]);
 
   return (
     <div className="p-6 text-white">
-      {started && <SolarSystem3D planets={planets} orbitHistory={orbitHistory} />}
+      <div className="mb-4">
+        <button
+          onClick={() => setPaused(!paused)}
+          className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500 transition"
+        >
+          {paused ? '▶ Reprendre' : '⏸ Pause'}
+        </button>
+      </div>
+      <SolarSystem3D planets={planets} orbitHistory={orbitHistory} />
     </div>
   );
 };

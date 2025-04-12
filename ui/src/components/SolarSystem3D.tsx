@@ -1,7 +1,7 @@
 'use client';
 
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Line, useTexture } from '@react-three/drei';
+import { OrbitControls, useTexture } from '@react-three/drei';
 import { Texture } from 'three';
 
 const POSITION_SCALE = 1e9;
@@ -88,30 +88,23 @@ function SolarSystemScene({ planets, orbitHistory }: SolarSystem3DProps) {
         ) : null
       )}
 
-      {/* Orbites */}
+      {/* Points des orbites */}
       {orbitHistory &&
-        Object.entries(orbitHistory).map(([name, path]) => {
-          if (path.length < 2) return null; // ignorer si pas assez de points
-
-          const points: [number, number, number][] = path.map(
-            ([x, y, z]) => [x / POSITION_SCALE, y / POSITION_SCALE, z / POSITION_SCALE]
-          );
-
-          // Pour debug
-          console.log(`🌀 ${name} orbit with ${points.length} points`);
-          
-          return (
-            <Line
-              key={`orbit-${name}`}
-              points={points}
-              color={colors[name] || 'white'}
-              lineWidth={2}
-              transparent={false}
-              dashed={false}
-              opacity={1}
-            />
-          );
-        })}
+        Object.entries(orbitHistory).flatMap(([name, path]) =>
+          path.map(([x, y, z], index) => (
+            <mesh
+              key={`${name}-point-${index}`}
+              position={[
+                x / POSITION_SCALE,
+                y / POSITION_SCALE,
+                z / POSITION_SCALE,
+              ]}
+            >
+              <sphereGeometry args={[1, 8, 8]} />
+              <meshBasicMaterial color={colors[name] || 'white'} />
+            </mesh>
+          ))
+        )}
     </>
   );
 }
