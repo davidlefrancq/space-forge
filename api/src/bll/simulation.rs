@@ -3,6 +3,9 @@ use chrono::{DateTime, Utc};
 use rayon::prelude::*; // 🚀 Parallélisation
 use std::time::Instant;
 use std::sync::Arc;
+use std::fs::{File, create_dir_all};
+use std::io::{BufReader, Write};
+use serde_json;
 
 pub struct Simulation;
 
@@ -95,5 +98,34 @@ impl Simulation {
     );
 
     state
+  }
+
+  pub fn load_or_compute(planets: &[Planet], target_date: DateTime<Utc>) -> Vec<Planet> {
+    let cache_dir = "data/cache";
+    let cache_filename = format!("{}/{}.json", cache_dir, target_date.format("%Y-%m-%d"));
+
+    // Crée le dossier de cache s'il n'existe pas
+    let _ = create_dir_all(cache_dir);
+
+    // Essaie de charger depuis cache
+    if let Ok(file) = File::open(&cache_filename) {
+      let reader = BufReader::new(file);
+      if let Ok(cached) = serde_json::from_reader(reader) {
+        println!("♻️ Résultat chargé depuis cache : {}", cache_filename);
+        return cached;
+      }
+    }
+
+    // Sinon, calcule et sauvegarde
+    let result = Simulation::run(planets, target_date);
+
+    if let Ok(json) = serde_json::to_string_pretty(&result) {
+      if let Ok(mut file) = File::create(&cache_filename) {
+        let _ = file.write_all(json.as_bytes());
+        println!("💾 Résultat sauvegardé dans cache : {}", cache_filename);
+      }
+    }
+
+    result
   }
 }

@@ -38,7 +38,7 @@ async fn simulate(params: web::Json<SimulateParams>) -> impl Responder {
   let planets = Simulation::load_planets(PLANETS_PATH);
   tracing::info!("🪐 {} planètes chargées", planets.len());
 
-  let result = Simulation::run(&planets, target_date);
+  let result = Simulation::load_or_compute(&planets, target_date);
   tracing::info!("✅ Simulation terminée");
 
   HttpResponse::Ok().json(result)
