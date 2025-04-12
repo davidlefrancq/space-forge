@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { simulate } from '../lib/api';
-import PlanetCard from './PlanetCard';
-import OrbitCanvas from './OrbitCanvas';
+import SolarSystem3D from './SolarSystem3D';
 
 interface Planet {
   name: string;
@@ -59,12 +58,7 @@ const SolarSystem = () => {
 
   return (
     <div className="p-6 text-white">
-      <OrbitCanvas planets={planets} orbitHistory={orbitHistory} />
-      <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
-        {planets.map((planet) => (
-          <PlanetCard key={planet.name} planet={planet} />
-        ))}
-      </div>
+      {started && <SolarSystem3D planets={planets} />}
     </div>
   );
 };
