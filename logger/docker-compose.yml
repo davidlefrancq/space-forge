@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki-data:/loki
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:latest
+    volumes:
+      - ./config/promtail-config.yml:/etc/promtail/promtail.yml
+      - /var/log:/var/log   # Pour lire les logs système
+    command: -config.file=/etc/promtail/promtail.yml
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    restart: unless-stopped
+
+volumes:
+  grafana-storage:

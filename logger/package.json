@@ -1,0 +1,15 @@
+{
+  "name": "logger",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "restart": "npm run stop && npm run start",
+    "start": "docker-compose up -d",
+    "stop": "docker-compose down",
+    "logs": "docker logs -f logger-loki-1",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
