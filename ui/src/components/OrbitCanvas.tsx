@@ -10,9 +10,10 @@ interface Planet {
 
 interface OrbitCanvasProps {
   planets: Planet[];
+  orbitHistory: Record<string, [number, number][]>;
 }
 
-const OrbitCanvas: React.FC<OrbitCanvasProps> = ({ planets }) => {
+const OrbitCanvas: React.FC<OrbitCanvasProps> = ({ planets, orbitHistory }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -50,12 +51,19 @@ const OrbitCanvas: React.FC<OrbitCanvasProps> = ({ planets }) => {
       const x = sunX + planet.position[0] * scale;
       const y = sunY + planet.position[1] * scale;
 
-      // Orbite simplifiée
-      ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-      ctx.beginPath();
-      const orbitRadius = Math.sqrt(planet.position[0] ** 2 + planet.position[1] ** 2) * scale;
-      ctx.arc(sunX, sunY, orbitRadius, 0, 2 * Math.PI);
-      ctx.stroke();
+      // Tracé de l'orbite (points précédents)
+      const history = orbitHistory[planet.name] || [];
+      if (history.length > 1) {
+        ctx.strokeStyle = 'rgba(0,200,255,0.5)';
+        ctx.beginPath();
+        const [startX, startY] = history[0];
+        ctx.moveTo(sunX + startX * scale, sunY + startY * scale);
+        for (let i = 1; i < history.length; i++) {
+          const [hx, hy] = history[i];
+          ctx.lineTo(sunX + hx * scale, sunY + hy * scale);
+        }
+        ctx.stroke();
+      }
 
       // Planète
       ctx.fillStyle = 'white';
