@@ -1,17 +1,25 @@
-use crate::dal::planet_dao::PlanetDAO;
+use crate::dal::cache_dao::CacheDAO;
+use crate::dal::celest_item_dao::CelestItemDAO;
+use std::sync::Arc;
 
 pub struct DAOFactory {
-  planetDAO: PlanetDAO
+  cacheDAO: Arc<CacheDAO>,
+  celestItemDAO: Arc<CelestItemDAO>
 }
 
 impl DAOFactory {
   pub fn new() -> Self {
     DAOFactory {
-      planetDAO: PlanetDAO
+      cacheDAO: Arc::new(CacheDAO::new()),
+      celestItemDAO: Arc::new(CelestItemDAO::new())
     }
   }
 
-  pub fn planetDAO(&self) -> &PlanetDAO {
-    &self.planetDAO
+  pub fn celestItemDAO(&self) -> Arc<CelestItemDAO> {
+    Arc::clone(&self.celestItemDAO)
+  }
+
+  pub fn cacheDAO(&self) -> Arc<CacheDAO> {
+    Arc::clone(&self.cacheDAO)
   }
 }

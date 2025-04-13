@@ -1,31 +1,39 @@
-use crate::bo::planet::Planet;
+use crate::bo::celest_item::CelestItem;
+use crate::dal::cache_dao::CacheDAO;
+use crate::dal::dao_factory::DAOFactory;
+use crate::dal::celest_item_dao::CelestItemDAO;
 use chrono::{DateTime, Utc};
-use rayon::prelude::*; // 🚀 Parallélisation
+use rayon::prelude::*;
 use std::time::Instant;
 use std::sync::Arc;
-use std::fs::{File, create_dir_all};
-use std::io::{BufReader, Write};
-use serde_json;
 
-pub struct Simulation;
+pub struct Simulator {
+  daoFactory: Arc<DAOFactory>,
+  cacheDao: Arc<CacheDAO>,
+  celestItemDAO: Arc<CelestItemDAO>,
+  pub celestItems: Vec<CelestItem>,
+}
 
-impl Simulation {
+impl Simulator {
   const REFERENCE_DATE: &'static str = "2000-01-01T12:00:00Z";
 
-  /// Charge les planètes depuis un fichier JSON
-  pub fn load_planets(path: &str) -> Vec<Planet> {
-    use crate::dal::dao_factory::DAOFactory;
-    let daoFactory = DAOFactory::new();
-    match daoFactory.planetDAO().load_from_file(path) {
-      Ok(planets) => planets,
-      Err(err) => {
-        eprintln!("Erreur lors du chargement des planètes : {err}");
-        vec![]
-      }
+  pub fn new(path: &str) -> Self {
+    let daoFactory = Arc::new(DAOFactory::new());
+    let cacheDao = daoFactory.cacheDAO();
+    let celestItemDAO = daoFactory.celestItemDAO();
+    let celestItems = celestItemDAO.load_from_file(path).unwrap_or_else(|err| {
+      eprintln!("Erreur lors du chargement des planètes : {err}");
+      vec![]
+    });
+    Simulator {
+        daoFactory,
+        cacheDao,
+        celestItemDAO,
+        celestItems,
     }
   }
 
-  pub fn run(planets: &[Planet], target_date: DateTime<Utc>) -> Vec<Planet> {
+  pub fn run(&self, celestItems: &[CelestItem], target_date: DateTime<Utc>) -> Vec<CelestItem> {
     let start = Instant::now();
     const G: f64 = 6.67430e-11;
     let reference_date = DateTime::parse_from_rfc3339(Self::REFERENCE_DATE)
@@ -43,7 +51,7 @@ impl Simulation {
     }
 
     let sign = if delta_seconds >= 0.0 { 1.0 } else { -1.0 };
-    let mut state: Vec<Planet> = planets.to_vec();
+    let mut state: Vec<CelestItem> = celestItems.to_vec();
 
     for _ in 0..steps {
       let shared_state = Arc::new(state.clone());
@@ -83,10 +91,10 @@ impl Simulation {
       state
         .par_iter_mut()
         .zip(accelerations.par_iter())
-        .for_each(|(planet, acc)| {
+        .for_each(|(celestItem, acc)| {
           for k in 0..3 {
-            planet.velocity[k] += sign * acc[k] * dt;
-            planet.position[k] += sign * planet.velocity[k] * dt;
+            celestItem.velocity[k] += sign * acc[k] * dt;
+            celestItem.position[k] += sign * celestItem.velocity[k] * dt;
           }
         });
     }
@@ -100,31 +108,13 @@ impl Simulation {
     state
   }
 
-  pub fn load_or_compute(planets: &[Planet], target_date: DateTime<Utc>) -> Vec<Planet> {
-    let cache_dir = "data/cache";
-    let cache_filename = format!("{}/{}.json", cache_dir, target_date.format("%Y-%m-%d"));
-
-    // Crée le dossier de cache s'il n'existe pas
-    let _ = create_dir_all(cache_dir);
-
-    // Essaie de charger depuis cache
-    if let Ok(file) = File::open(&cache_filename) {
-      let reader = BufReader::new(file);
-      if let Ok(cached) = serde_json::from_reader(reader) {
-        println!("♻️ Résultat chargé depuis cache : {}", cache_filename);
-        return cached;
-      }
+  pub fn load_or_compute(&self, target_date: DateTime<Utc>) -> Vec<CelestItem> {
+    if let Some(cached) = self.cacheDao.load_from_cache(target_date) {
+      return cached;
     }
 
-    // Sinon, calcule et sauvegarde
-    let result = Simulation::run(planets, target_date);
-
-    if let Ok(json) = serde_json::to_string_pretty(&result) {
-      if let Ok(mut file) = File::create(&cache_filename) {
-        let _ = file.write_all(json.as_bytes());
-        println!("💾 Résultat sauvegardé dans cache : {}", cache_filename);
-      }
-    }
+    let result = self.run(&self.celestItems, target_date);
+    self.cacheDao.save_to_cache(target_date, &result);
 
     result
   }

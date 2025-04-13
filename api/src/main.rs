@@ -3,20 +3,19 @@ use actix_web::{get, post, web, App, HttpServer, Responder, HttpResponse};
 use actix_cors::Cors;
 use serde::Deserialize;
 use chrono::{DateTime, Utc};
+use std::time::Instant;
 
 mod bo;
 mod bll;
 mod dal;
 mod utils;
 
-use bll::simulation::Simulation;
+use bll::simulator::Simulator;
 use utils::logger_factory::LoggerFactory;
 
-const PLANETS_PATH: &str = "data/planets.json";
-
-#[get("/ping")]
-async fn ping() -> impl Responder {
-  HttpResponse::Ok().body("pong")
+#[get("/")]
+async fn home() -> impl Responder {
+  HttpResponse::Ok().body("ok")
 }
 
 #[derive(Deserialize)]
@@ -25,8 +24,10 @@ struct SimulateParams {
 }
 
 #[post("/simulate")]
-async fn simulate(params: web::Json<SimulateParams>) -> impl Responder {
+async fn simulate(simulator: web::Data<Simulator>, params: web::Json<SimulateParams>) -> impl Responder {
+  let start = Instant::now();
   tracing::info!("📡 Requête reçue avec date = {}", params.date);
+  tracing::info!("🔭 Nombre de planètes : {}", simulator.celestItems.len());
 
   let target_date = match DateTime::parse_from_rfc3339(&params.date) {
     Ok(parsed) => parsed.with_timezone(&Utc),
@@ -35,12 +36,18 @@ async fn simulate(params: web::Json<SimulateParams>) -> impl Responder {
     }
   };
 
-  let planets = Simulation::load_planets(PLANETS_PATH);
-  tracing::info!("🪐 {} planètes chargées", planets.len());
-
-  let result = Simulation::load_or_compute(&planets, target_date);
-  tracing::info!("✅ Simulation terminée");
-
+  let result = simulator.load_or_compute(target_date);
+  let nb_items = result.len();
+  
+  /// convert result to JSON
+  let result = match serde_json::to_string(&result) {
+    Ok(json) => json,
+    Err(e) => {
+      return HttpResponse::InternalServerError().body(format!("Erreur de sérialisation : {e}"));
+    }
+  };
+  
+  tracing::info!("✅ Simulation terminée avec {} objets celestes in {} ms", nb_items, start.elapsed().as_millis());
   HttpResponse::Ok().json(result)
 }
 
@@ -56,20 +63,22 @@ async fn main() -> std::io::Result<()> {
 
   // Initialisation du logger
   LoggerFactory::init_from_env(log_level, log_output);
-  
-  // println!("🚀 Serveur lancé sur http://localhost:8080");
   println!("🚀 Serveur lancé sur http://{}:{}", address, port);
+
+  const PLANETS_PATH: &str = "data/celest_items.json";
+  let simulator = web::Data::new(Simulator::new(PLANETS_PATH));  
 
   HttpServer::new(move || {
     App::new()
+      .app_data(simulator.clone())
       .wrap(
         Cors::default()
-            .allowed_origin(&allowerd_origins)  // <-- ton origine Next.js
+            .allowed_origin(&allowerd_origins)
             .allowed_methods(vec!["GET", "POST"])
             .allowed_headers(vec!["Content-Type"])
             .supports_credentials(),
       )
-      .service(ping)
+      .service(home)
       .service(simulate)
   })
   .bind((address, port))?

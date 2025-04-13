@@ -1,5 +1,5 @@
 // types.ts
-export interface Planet {
+export interface CelestItem {
   name: string;
   mass: number;
   radius: number;
@@ -7,6 +7,6 @@ export interface Planet {
   velocity: [number, number, number];
 }
 
-export interface SimulationParams {
+export interface SimulatorParams {
   date: string; // Date RFC3339
 }

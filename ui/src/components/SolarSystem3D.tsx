@@ -8,18 +8,18 @@ const POSITION_SCALE = 1e9;
 const RADIUS_SCALE = 1e6;
 const SUN_RADIUS_SCALE = 2e7;
 
-interface Planet {
+interface CelestItem {
   name: string;
   position: [number, number, number];
   radius: number;
 }
 
 interface SolarSystem3DProps {
-  planets: Planet[];
+  celestItems: CelestItem[];
   orbitHistory?: Record<string, [number, number, number][]>;
 }
 
-function SolarSystemScene({ planets, orbitHistory }: SolarSystem3DProps) {
+function SolarSystemScene({ celestItems, orbitHistory }: SolarSystem3DProps) {
 
   // Couleur simple par nom
   const colors: Record<string, string> = {
@@ -47,7 +47,7 @@ function SolarSystemScene({ planets, orbitHistory }: SolarSystem3DProps) {
     Soleil: useTexture('/textures/2k_sun.jpg'), // optionnel, car le Soleil est souvent emissive
   };
 
-  const soleil = planets.find((planet) => planet.name === 'Soleil');
+  const soleil = celestItems.find((celestItem) => celestItem.name === 'Soleil');
   if (!soleil) return null;
 
   return (
@@ -72,18 +72,18 @@ function SolarSystemScene({ planets, orbitHistory }: SolarSystem3DProps) {
       </mesh>
 
       {/* Planètes */}
-      {planets.map((planet) =>
-        planet.name !== 'Soleil' ? (
+      {celestItems.map((celestItem) =>
+        celestItem.name !== 'Soleil' ? (
           <mesh
-            key={planet.name}
+            key={celestItem.name}
             position={[
-              planet.position[0] / POSITION_SCALE,
-              planet.position[1] / POSITION_SCALE,
-              planet.position[2] / POSITION_SCALE,
+              celestItem.position[0] / POSITION_SCALE,
+              celestItem.position[1] / POSITION_SCALE,
+              celestItem.position[2] / POSITION_SCALE,
             ]}
           >
-            <sphereGeometry args={[planet.radius / RADIUS_SCALE, 64, 64]} />
-            <meshStandardMaterial map={textures[planet.name] || undefined} />
+            <sphereGeometry args={[celestItem.radius / RADIUS_SCALE, 64, 64]} />
+            <meshStandardMaterial map={textures[celestItem.name] || undefined} />
           </mesh>
         ) : null
       )}
@@ -110,14 +110,14 @@ function SolarSystemScene({ planets, orbitHistory }: SolarSystem3DProps) {
 }
 
 
-export default function SolarSystem3D({ planets, orbitHistory }: SolarSystem3DProps) {
+export default function SolarSystem3D({ celestItems, orbitHistory }: SolarSystem3DProps) {
   return (
     <div className="w-full h-[600px] rounded-xl overflow-hidden shadow-lg">
       <Canvas
         camera={{ position: [0, 0, 300], near: 0.1, far: 1e7 }}
         style={{ background: 'black' }}
       >
-        <SolarSystemScene planets={planets} orbitHistory={orbitHistory} />
+        <SolarSystemScene celestItems={celestItems} orbitHistory={orbitHistory} />
       </Canvas>
     </div>
   );

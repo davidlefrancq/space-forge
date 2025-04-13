@@ -1,1 +1,1 @@
-pub mod planet;
+pub mod celest_item;

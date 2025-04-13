@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Planet {
+pub struct CelestItem {
     pub name: String,
     pub mass: f64,       // en kilogrammes
     pub radius: f64,     // en mètres

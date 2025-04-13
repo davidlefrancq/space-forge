@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { simulate } from '../lib/api';
 import SolarSystem3D from './SolarSystem3D';
 
-interface Planet {
+interface CelestItem {
   name: string;
   mass: number;
   radius: number;
@@ -14,7 +14,7 @@ interface Planet {
 
 const SolarSystem = () => {
   const [date, setDate] = useState<Date>(new Date('2025-04-11T00:00:00Z'));
-  const [planets, setPlanets] = useState<Planet[]>([]);
+  const [celestItems, setCelestItems] = useState<CelestItem[]>([]);
   const [orbitHistory, setOrbitHistory] = useState<Record<string, [number, number, number][]>>({});
   const [started, setStarted] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -27,14 +27,14 @@ const SolarSystem = () => {
     const runLoop = async () => {
         const isoDate = date.toISOString();
         try {
-          const result: Planet[] = await simulate(isoDate);
-          setPlanets(result);
+          const result: CelestItem[] = await simulate(isoDate);
+          setCelestItems(result);
           setOrbitHistory((prev) => {
             const newHistory = { ...prev };
-            result.forEach((planet: Planet) => {
-              const [x, y, z] = planet.position;
-              if (!newHistory[planet.name]) newHistory[planet.name] = [];
-              newHistory[planet.name].push([x, y, z]);
+            result.forEach((celestItem: CelestItem) => {
+              const [x, y, z] = celestItem.position;
+              if (!newHistory[celestItem.name]) newHistory[celestItem.name] = [];
+              newHistory[celestItem.name].push([x, y, z]);
             });
             return newHistory;
           });
@@ -59,7 +59,7 @@ const SolarSystem = () => {
           {paused ? '▶ Reprendre' : '⏸ Pause'}
         </button>
       </div>
-      <SolarSystem3D planets={planets} orbitHistory={orbitHistory} />
+      <SolarSystem3D celestItems={celestItems} orbitHistory={orbitHistory} />
     </div>
   );
 };
