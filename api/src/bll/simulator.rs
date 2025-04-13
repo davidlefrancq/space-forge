@@ -10,6 +10,7 @@ use std::sync::Arc;
 pub struct Simulator {
   daoFactory: Arc<DAOFactory>,
   cacheDao: Arc<CacheDAO>,
+  
   celestItemDAO: Arc<CelestItemDAO>,
   pub celestItems: Vec<CelestItem>,
 }
@@ -17,16 +18,15 @@ pub struct Simulator {
 impl Simulator {
   const REFERENCE_DATE: &'static str = "2000-01-01T12:00:00Z";
 
-  pub fn new(path: &str) -> Self {
-    let daoFactory = Arc::new(DAOFactory::new());
-    let cacheDao = daoFactory.cacheDAO();
-    let celestItemDAO = daoFactory.celestItemDAO();
+  pub fn new(factory: Arc<DAOFactory>, path: &str) -> Self {
+    let cacheDao = factory.cacheDAO();
+    let celestItemDAO = factory.celestItemDAO();
     let celestItems = celestItemDAO.load_from_file(path).unwrap_or_else(|err| {
       eprintln!("Erreur lors du chargement des planètes : {err}");
       vec![]
     });
     Simulator {
-        daoFactory,
+        daoFactory: factory,
         cacheDao,
         celestItemDAO,
         celestItems,

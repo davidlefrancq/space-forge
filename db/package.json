@@ -1,5 +1,5 @@
 {
-  "name": "logger",
+  "name": "db",
   "version": "1.0.0",
   "description": "",
   "main": "",
@@ -7,7 +7,7 @@
     "restart": "npm run stop && npm run start",
     "start": "docker-compose up -d",
     "stop": "docker-compose down",
-    "logs": "docker logs -f logger-loki-1",
+    "logs": "docker logs -f db-mongo-1",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

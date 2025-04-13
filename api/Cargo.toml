@@ -9,6 +9,8 @@ actix-web = "4.10.2"
 anyhow = "1.0.97"
 chrono = { version = "0.4.40", features = ["serde", "clock"] }
 dotenvy = "0.15.7"
+futures = "0.3.31"
+mongodb = "3.2.3"
 nalgebra = "0.33.2"
 rayon = "1.10.0"
 serde = { version = "1.0.219", features = ["derive"] }

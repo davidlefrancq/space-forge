@@ -1,9 +1,11 @@
 use std::env;
 use actix_web::{get, post, web, App, HttpServer, Responder, HttpResponse};
 use actix_cors::Cors;
+use dal::dao_factory::DAOFactory;
 use serde::Deserialize;
 use chrono::{DateTime, Utc};
 use std::time::Instant;
+use std::sync::Arc;
 
 mod bo;
 mod bll;
@@ -63,11 +65,18 @@ async fn main() -> std::io::Result<()> {
 
   // Initialisation du logger
   LoggerFactory::init_from_env(log_level, log_output);
-  println!("🚀 Serveur lancé sur http://{}:{}", address, port);
+
+  // Initialisation DAOFactory + connexion Mongo
+  let mut daoFactory = DAOFactory::new();
+  // if let (Ok(uri), Ok(db_name)) = (env::var("MONGO_URI"), env::var("MONGO_DB")) {
+  //     daoFactory.connect(&uri, &db_name).await;
+  // }
+  let daoFactory = Arc::new(daoFactory);
 
   const PLANETS_PATH: &str = "data/celest_items.json";
-  let simulator = web::Data::new(Simulator::new(PLANETS_PATH));  
+  let simulator = web::Data::new(Simulator::new(daoFactory, PLANETS_PATH));  
 
+  println!("🚀 Serveur lancé sur http://{}:{}", address, port);
   HttpServer::new(move || {
     App::new()
       .app_data(simulator.clone())
