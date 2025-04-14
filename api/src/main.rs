@@ -38,7 +38,7 @@ async fn simulate(simulator: web::Data<Simulator>, params: web::Json<SimulatePar
     }
   };
 
-  let result = simulator.load_or_compute(target_date);
+  let result = simulator.load_or_compute(target_date).await;
   let nb_items = result.len();
   
   /// convert result to JSON
@@ -68,9 +68,9 @@ async fn main() -> std::io::Result<()> {
 
   // Initialisation DAOFactory + connexion Mongo
   let mut daoFactory = DAOFactory::new();
-  // if let (Ok(uri), Ok(db_name)) = (env::var("MONGO_URI"), env::var("MONGO_DB")) {
-  //     daoFactory.connect(&uri, &db_name).await;
-  // }
+  if let (Ok(uri), Ok(db_name), Ok(collection_name)) = (env::var("MONGO_URI"), env::var("MONGO_DB_NAME"), env::var("MONGO_COLLECTION_NAME")) {
+    daoFactory.connect(&uri, &db_name, &collection_name).await;
+  }
   let daoFactory = Arc::new(daoFactory);
 
   const PLANETS_PATH: &str = "data/celest_items.json";

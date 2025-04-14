@@ -2,16 +2,14 @@ use crate::bo::celest_item::CelestItem;
 use crate::dal::cache_dao::CacheDAO;
 use crate::dal::dao_factory::DAOFactory;
 use crate::dal::celest_item_dao::CelestItemDAO;
+use crate::dal::celest_item_repository::{CelestItemRepositoryImpl, PersistenceTarget, CelestItemRepository};
 use chrono::{DateTime, Utc};
 use rayon::prelude::*;
 use std::time::Instant;
 use std::sync::Arc;
 
 pub struct Simulator {
-  daoFactory: Arc<DAOFactory>,
-  cacheDao: Arc<CacheDAO>,
-  
-  celestItemDAO: Arc<CelestItemDAO>,
+  repository: Arc<CelestItemRepositoryImpl>,
   pub celestItems: Vec<CelestItem>,
 }
 
@@ -19,16 +17,13 @@ impl Simulator {
   const REFERENCE_DATE: &'static str = "2000-01-01T12:00:00Z";
 
   pub fn new(factory: Arc<DAOFactory>, path: &str) -> Self {
-    let cacheDao = factory.cacheDAO();
-    let celestItemDAO = factory.celestItemDAO();
-    let celestItems = celestItemDAO.load_from_file(path).unwrap_or_else(|err| {
+    let repository = factory.celestItemRepository();
+    let celestItems = factory.celestItemDAO().load_from_file(path).unwrap_or_else(|err| {
       eprintln!("Erreur lors du chargement des planètes : {err}");
       vec![]
     });
     Simulator {
-        daoFactory: factory,
-        cacheDao,
-        celestItemDAO,
+        repository,
         celestItems,
     }
   }
@@ -99,6 +94,11 @@ impl Simulator {
         });
     }
     
+    // 3. Ajout du timestamp à chaque objet simulé
+    for item in state.iter_mut() {
+      item.timestamp = Some(target_date);
+    }
+
     let duration = start.elapsed();
     tracing::info!(
       "⏱️ Simulation terminée en {} secondes",
@@ -108,13 +108,18 @@ impl Simulator {
     state
   }
 
-  pub fn load_or_compute(&self, target_date: DateTime<Utc>) -> Vec<CelestItem> {
-    if let Some(cached) = self.cacheDao.load_from_cache(target_date) {
-      return cached;
+  pub async fn load_or_compute(&self, target_date: DateTime<Utc>) -> Vec<CelestItem> {
+    if let Ok(cached) = self.repository.find_by_date(target_date).await {
+      if !cached.is_empty() {
+        return cached;
+      }
     }
 
+    // let result: Vec<CelestItem> = [].to_vec();
     let result = self.run(&self.celestItems, target_date);
-    self.cacheDao.save_to_cache(target_date, &result);
+    self.repository.save_many(&result, PersistenceTarget::Mongo).await.unwrap_or_else(|err| {
+      eprintln!("Erreur lors de la sauvegarde dans le cache : {err}");
+    });
 
     result
   }

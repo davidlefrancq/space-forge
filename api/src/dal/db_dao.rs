@@ -1,6 +1,7 @@
 use mongodb::{
+  IndexModel,
   bson::{doc, Document},
-  options::ClientOptions,
+  options::{ ClientOptions, IndexOptions },
   Client, Collection, Database,
 };
 
@@ -43,5 +44,18 @@ impl MongoDBClient {
         let cursor = collection.find(filter.unwrap_or_else(|| doc! {})).await?;
         let results = cursor.try_collect().await?;
         Ok(results)
+    }
+
+    pub async fn ensure_indexes(&self, collection_name: &str) -> mongodb::error::Result<()> {
+      let collection = self.collection::<Document>(collection_name);
+
+      let index_model = IndexModel::builder()
+        .keys(doc! { "name": 1, "timestamp": 1 })
+        .options(IndexOptions::builder().unique(true).build())
+        .build();
+
+      collection.create_index(index_model).await?;
+
+      Ok(())
     }
 }
