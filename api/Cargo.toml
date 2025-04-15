@@ -7,6 +7,7 @@ edition = "2024"
 actix-cors = "0.7.1"
 actix-web = "4.10.2"
 anyhow = "1.0.97"
+async-trait = "0.1.88"
 chrono = { version = "0.4.40", features = ["serde", "clock"] }
 dotenvy = "0.15.7"
 futures = "0.3.31"

@@ -1,26 +1,33 @@
-use std::{fs::File, io::BufReader, path::Path};
-
-use anyhow::{Context, Result};
-use serde_json;
+use chrono::{DateTime, Utc};
+use anyhow::Result;
+use std::sync::Arc;
 
 use crate::bo::celest_item::CelestItem;
+use crate::dal::celest_item_repository::{CelestItemRepository, CelestItemRepositoryTrait, PersistenceTarget};
 
-pub struct CelestItemDAO;
+pub struct CelestItemDAO {
+  repository: Arc<dyn CelestItemRepositoryTrait>,
+  persistence_target: PersistenceTarget,
+}
 
 impl CelestItemDAO {
-  pub fn new() -> Self {
-    CelestItemDAO
+  pub async fn new(persistence_target: PersistenceTarget) -> Self {
+    let repository = Arc::new(CelestItemRepository::new().await);
+    Self { repository, persistence_target }
   }
 
-  pub fn load_from_file<P: AsRef<Path>>(&self, path: P) -> Result<Vec<CelestItem>> {
-    let path_ref = path.as_ref();
+  /// Load CelestItem list from a file
+  pub async fn load_celest_items(&self, file_path: &str) -> Result<Vec<CelestItem>> {
+    self.repository.load_celest_items(file_path).await
+  }
 
-    let file = File::open(path_ref)
-      .context(format!("Échec d'ouverture du fichier {:?}", path_ref))?;
+  /// Load CelestItem list for a given simulation date
+  pub async fn find_by_date(&self, date: DateTime<Utc>) -> Result<Vec<CelestItem>> {
+    self.repository.find_by_date(date).await
+  }
 
-    let reader = BufReader::new(file);
-
-    serde_json::from_reader(reader)
-      .context("Erreur de désérialisation JSON vers Vec<CelestItem>")
+  /// Save simulation results
+  pub async fn save_many(&self, items: &[CelestItem]) -> Result<()> {
+    self.repository.save_many(items, self.persistence_target).await
   }
 }

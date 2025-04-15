@@ -280,6 +280,7 @@ dependencies = [
  "actix-cors",
  "actix-web",
  "anyhow",
+ "async-trait",
  "chrono",
  "dotenvy",
  "futures",

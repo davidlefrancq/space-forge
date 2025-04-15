@@ -29,7 +29,7 @@ struct SimulateParams {
 async fn simulate(simulator: web::Data<Simulator>, params: web::Json<SimulateParams>) -> impl Responder {
   let start = Instant::now();
   tracing::info!("📡 Requête reçue avec date = {}", params.date);
-  tracing::info!("🔭 Nombre de planètes : {}", simulator.celestItems.len());
+  tracing::info!("🔭 Nombre de planètes : {}", simulator.celest_items.len());
 
   let target_date = match DateTime::parse_from_rfc3339(&params.date) {
     Ok(parsed) => parsed.with_timezone(&Utc),
@@ -67,14 +67,10 @@ async fn main() -> std::io::Result<()> {
   LoggerFactory::init_from_env(log_level, log_output);
 
   // Initialisation DAOFactory + connexion Mongo
-  let mut daoFactory = DAOFactory::new();
-  if let (Ok(uri), Ok(db_name), Ok(collection_name)) = (env::var("MONGO_URI"), env::var("MONGO_DB_NAME"), env::var("MONGO_COLLECTION_NAME")) {
-    daoFactory.connect(&uri, &db_name, &collection_name).await;
-  }
-  let daoFactory = Arc::new(daoFactory);
-
+  let daoFactory = Arc::new(DAOFactory::new().await);
+  
   const PLANETS_PATH: &str = "data/celest_items.json";
-  let simulator = web::Data::new(Simulator::new(daoFactory, PLANETS_PATH));  
+  let simulator = web::Data::new(Simulator::new(daoFactory, PLANETS_PATH).await);  
 
   println!("🚀 Serveur lancé sur http://{}:{}", address, port);
   HttpServer::new(move || {
