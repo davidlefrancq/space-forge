@@ -54,43 +54,44 @@ const SolarSystem = () => {
 
   return (
     <div className="p-6 text-white space-y-6">
-      <div className="flex flex-wrap items-center gap-4 bg-zinc-900 p-4 rounded-xl shadow-inner">
+      <div className="flex items-center justify-between bg-zinc-900 p-4 rounded-xl shadow-inner w-full">
         
-        {/* Bouton lecture/pause */}
-        <button
-          onClick={() => setPaused(!paused)}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-500 transition"
-        >
-          {paused ? (
-            <>
-              <span className="text-lg">▶</span> Reprendre
-            </>
-          ) : (
-            <>
-              <span className="text-lg">⏸</span> Pause
-            </>
-          )}
-        </button>
+        {/* Bouton pause à gauche */}
+        <div className="flex-1 flex justify-start">
+          <button
+            onClick={() => setPaused(!paused)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-500 transition"
+          >
+            {paused ? (
+              <>
+                <span className="text-lg">▶</span> Reprendre
+              </>
+            ) : (
+              <>
+                <span className="text-lg">⏸</span> Pause
+              </>
+            )}
+          </button>
+        </div>
 
-        <div className="flex items-center gap-4 text-sm text-gray-300 font-mono">
-          {/* Date formatée */}
-          <span>
-            {String(date.getUTCDate()).padStart(2, '0')}/
-            {String(date.getUTCMonth() + 1).padStart(2, '0')}/
-            {date.getUTCFullYear()}
-          </span>
+        {/* Date au centre */}
+        <div className="flex-1 flex justify-center font-mono text-sm text-gray-300">
+          {String(date.getUTCDate()).padStart(2, '0')}/
+          {String(date.getUTCMonth() + 1).padStart(2, '0')}/
+          {date.getUTCFullYear()}
+        </div>
 
-          {/* Sélecteur de pas */}
-          <div className="flex items-center gap-2">
-            <TimeStepSelector
-              initialValue={1}
-              initialUnit="day"
-              onChange={(s) => setPassedTime(s * 1000)}
-            />
-          </div>
+        {/* Pas temporel à droite */}
+        <div className="flex-1 flex justify-end items-center gap-2 text-sm">
+          <label className="text-gray-400 whitespace-nowrap">Pas temporel :</label>
+          <TimeStepSelector
+            initialValue={1}
+            initialUnit="day"
+            onChange={(s) => setPassedTime(s * 1000)}
+          />
         </div>
       </div>
-
+      
       <SolarSystem3D celestItems={celestItems} orbitHistory={orbitHistory} />
     </div>
   );
