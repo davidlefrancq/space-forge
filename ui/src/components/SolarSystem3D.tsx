@@ -5,8 +5,6 @@ import { OrbitControls, useTexture } from '@react-three/drei';
 import { Texture } from 'three';
 
 const POSITION_SCALE = 1e9;
-const RADIUS_SCALE = 1e6;
-const SUN_RADIUS_SCALE = 2e7;
 
 interface CelestItem {
   name: string;
