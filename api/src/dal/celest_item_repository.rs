@@ -54,6 +54,7 @@ impl CelestItemRepository {
       Some(Arc::new(mongo_persistor))
     } else {
       tracing::warn!("MongoDB config not found: skipping Mongo persistence.");
+      println!("⚠️  Wrong MongoDB config: skipping connection.");
       None
     };
 
