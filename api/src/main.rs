@@ -1,6 +1,7 @@
 use std::env;
 use actix_web::{get, post, web, App, HttpServer, Responder, HttpResponse};
 use actix_cors::Cors;
+use bo::celest_item::CelestItem;
 use dal::dao_factory::DAOFactory;
 use serde::Deserialize;
 use chrono::{DateTime, Utc};
@@ -26,7 +27,10 @@ struct SimulateParams {
 }
 
 #[post("/simulate")]
-async fn simulate(simulator: web::Data<Simulator>, params: web::Json<SimulateParams>) -> impl Responder {
+async fn simulate(
+  simulator: web::Data<Simulator>,
+  params: web::Json<SimulateParams>
+) -> impl Responder {
   let start = Instant::now();
   tracing::info!("📡 Requête reçue avec date = {}", params.date);
   tracing::info!("🔭 Nombre de planètes : {}", simulator.celest_items.len());
@@ -50,6 +54,56 @@ async fn simulate(simulator: web::Data<Simulator>, params: web::Json<SimulatePar
   };
   
   tracing::info!("✅ Simulation terminée avec {} objets celestes in {} ms", nb_items, start.elapsed().as_millis());
+  HttpResponse::Ok().json(result)
+}
+
+#[derive(Deserialize)]
+struct SimulateRangeParams {
+    from: String,     // DateTime ISO 8601
+    to: String,       // DateTime ISO 8601
+    step_seconds: u64 // Ex: 86400 pour 1 jour
+}
+
+#[post("/get_simulated_range")]
+async fn get_simulated_range(
+    simulator: web::Data<Simulator>,
+    params: web::Json<SimulateRangeParams>
+) -> impl Responder {
+  let start = Instant::now();
+
+  let from = match DateTime::parse_from_rfc3339(&params.from) {
+    Ok(parsed) => parsed.with_timezone(&Utc),
+    Err(_) => return HttpResponse::BadRequest().body("Invalid 'from' date"),
+  };
+
+  println!("from = {}", from);
+
+  let to = match DateTime::parse_from_rfc3339(&params.to) {
+    Ok(parsed) => parsed.with_timezone(&Utc),
+    Err(_) => return HttpResponse::BadRequest().body("Invalid 'to' date"),
+  };
+
+  println!("to = {}", to);
+
+  if to <= from || params.step_seconds == 0 {
+    println!("Invalid range or step.");
+    return HttpResponse::BadRequest().body("Invalid range or step");
+  }
+
+  println!("step_seconds = {}", params.step_seconds);
+
+  let result = simulator.get_data(from, to).await;
+  let nb_items = result.len();
+
+  /// convert result to JSON
+  let result = match serde_json::to_string(&result) {
+    Ok(json) => json,
+    Err(e) => {
+      return HttpResponse::InternalServerError().body(format!("Erreur de sérialisation : {e}"));
+    }
+  };
+  
+  tracing::info!("✅ Chargement des donnée terminée avec {} objets celestes in {} ms", nb_items, start.elapsed().as_millis());
   HttpResponse::Ok().json(result)
 }
 
@@ -85,6 +139,7 @@ async fn main() -> std::io::Result<()> {
       )
       .service(home)
       .service(simulate)
+      .service(get_simulated_range)
   })
   .bind((address, port))?
   .run()

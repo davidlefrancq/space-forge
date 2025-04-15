@@ -2,12 +2,7 @@ use std::sync::Arc;
 use anyhow::{Result, Context};
 use chrono::{DateTime, Utc};
 use mongodb::{
-  IndexModel,
-  bson::{doc, DateTime as BsonDateTime, Document},
-  options::{ ClientOptions, IndexOptions },
-  Client,
-  Collection,
-  Database,
+  bson::{doc, DateTime as BsonDateTime, Document}, options::{ ClientOptions, FindOptions, IndexOptions }, Client, Collection, Database, IndexModel
 };
 use futures::TryStreamExt;
 
@@ -176,6 +171,32 @@ impl MongoPersistor {
 
     let cursor = collection
       .find(filter)
+      .await
+      .context("Erreur lors de la requête Mongo")?;
+
+    let results: Vec<CelestItem> = cursor
+      .try_collect()
+      .await
+      .context("Erreur de lecture des résultats Mongo")?;
+
+    Ok(results)
+  }
+
+  pub async fn find_by_dates(&self, start: DateTime<Utc>, stop: DateTime<Utc>) -> Result<Vec<CelestItem>> {
+    let collection: Collection<CelestItem> = self.client.collection(&self.collection_name);
+
+    let filter = doc! {
+      "timestamp": {
+        "$gte": start.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+        "$lte": stop.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+      }
+    };
+
+    let options = FindOptions::builder().limit(100).build();
+
+    let cursor = collection
+      .find(filter)
+      .with_options(options)
       .await
       .context("Erreur lors de la requête Mongo")?;
 

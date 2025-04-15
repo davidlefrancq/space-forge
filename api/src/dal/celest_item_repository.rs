@@ -23,6 +23,7 @@ pub trait CelestItemRepositoryTrait: Send + Sync {
   async fn save(&self, item: &CelestItem, target: PersistenceTarget) -> Result<()>;
   async fn save_many(&self, items: &[CelestItem], target: PersistenceTarget) -> Result<()>;
   async fn find_by_date(&self, date: DateTime<Utc>) -> Result<Vec<CelestItem>>;
+  async fn find_by_dates(&self, start: DateTime<Utc>, stop: DateTime<Utc>) -> Result<Vec<CelestItem>>;
   async fn load_celest_items(&self, file_path: &str) -> Result<Vec<CelestItem>> {
     // Default implementation to load CelestItem from a file
     let file = File::open(file_path)
@@ -113,6 +114,19 @@ impl CelestItemRepositoryTrait for CelestItemRepository {
     // Find in cache files
     // let results = self.cache.find_by_date(date).await?;
     // Ok(results.unwrap_or_default())
+    return Ok(vec![]);
+  }
+
+  async fn find_by_dates(&self, start: DateTime<Utc>, stop: DateTime<Utc>) -> Result<Vec<CelestItem>> {
+    // Find in MongoDB
+    tracing::info!("Searching in MongoDB for dates: {} to {}", start, stop);
+    if let Some(mongo) = &self.mongo {
+      let results = mongo.find_by_dates(start, stop).await?;
+      if !results.is_empty() {
+        return Ok(results);
+      }
+    }
+    tracing::info!("No results found in MongoDB for dates: {} to {}", start, stop);
     return Ok(vec![]);
   }
 }

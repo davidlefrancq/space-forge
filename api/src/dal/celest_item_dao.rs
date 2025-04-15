@@ -26,6 +26,11 @@ impl CelestItemDAO {
     self.repository.find_by_date(date).await
   }
 
+  /// Load CelestItem list for a given date range from cache
+  pub async fn find_by_dates(&self, start: DateTime<Utc>, stop: DateTime<Utc>) -> Result<Vec<CelestItem>> {
+    self.repository.find_by_dates(start, stop).await
+  }
+
   /// Save simulation results
   pub async fn save_many(&self, items: &[CelestItem]) -> Result<()> {
     self.repository.save_many(items, self.persistence_target).await

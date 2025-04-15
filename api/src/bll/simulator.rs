@@ -124,4 +124,20 @@ impl Simulator {
 
     result
   }
+
+  pub async fn get_data(&self, start: DateTime<Utc>, stop: DateTime<Utc>) -> Vec<CelestItem> {
+    if let Ok(cached) = self.dao.find_by_dates(start, stop).await {
+      if !cached.is_empty() {
+        return cached;
+      }
+    }
+
+    // let result: Vec<CelestItem> = [].to_vec();
+    let result = self.run(start);
+    self.dao.save_many(&result).await.unwrap_or_else(|err| {
+      eprintln!("Erreur lors de la sauvegarde dans le cache : {err}");
+    });
+
+    result
+  }
 }
