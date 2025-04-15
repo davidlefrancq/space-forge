@@ -50,6 +50,19 @@ function SolarSystemScene({ celestItems, orbitHistory }: SolarSystem3DProps) {
   const soleil = celestItems.find((celestItem) => celestItem.name === 'Soleil');
   if (!soleil) return null;
 
+  function scaleRadius(
+    radius: number,
+    maxRadius: number,
+    options?: { exponent?: number; scaleMax?: number; min?: number }
+  ): number {
+    const { exponent = 0.25, scaleMax = 16, min = 1.0 } = options || {};
+    const normalized = radius / maxRadius;
+    const scaled = Math.pow(normalized, exponent) * scaleMax;
+    return Math.max(scaled, min);
+  }
+
+  const maxRadius = Math.max(...celestItems.map((item) => item.radius));
+
   return (
     <>
       {/* Lumière générale et directionnelle */}
@@ -63,7 +76,7 @@ function SolarSystemScene({ celestItems, orbitHistory }: SolarSystem3DProps) {
 
       {/* Soleil */}
       <mesh position={[0, 0, 0]}>
-        <sphereGeometry args={[soleil.radius / SUN_RADIUS_SCALE, 64, 64]} />
+        <sphereGeometry args={[scaleRadius(soleil.radius, maxRadius), 64, 64]} />
         <meshStandardMaterial
           map={textures[soleil.name] || undefined}
           emissive="darkorange"
@@ -82,7 +95,7 @@ function SolarSystemScene({ celestItems, orbitHistory }: SolarSystem3DProps) {
               celestItem.position[2] / POSITION_SCALE,
             ]}
           >
-            <sphereGeometry args={[celestItem.radius / RADIUS_SCALE, 64, 64]} />
+            <sphereGeometry args={[scaleRadius(celestItem.radius, maxRadius), 64, 64]} />
             <meshStandardMaterial map={textures[celestItem.name] || undefined} />
           </mesh>
         ) : null
