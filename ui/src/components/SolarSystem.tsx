@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import { simulate } from '../lib/api';
 import SolarSystem3D from './SolarSystem3D';
+import TimeStepSelector from './TimeStepSelector';
+
+const ONE_DAY = 24 * 60 * 60 * 1000
 
 interface CelestItem {
   name: string;
@@ -14,6 +17,7 @@ interface CelestItem {
 
 const SolarSystem = () => {
   const [date, setDate] = useState<Date>(new Date('2025-04-11T00:00:00Z'));
+  const [passedTime, setPassedTime] = useState<number>(ONE_DAY);
   const [celestItems, setCelestItems] = useState<CelestItem[]>([]);
   const [orbitHistory, setOrbitHistory] = useState<Record<string, [number, number, number][]>>({});
   const [started, setStarted] = useState(false);
@@ -38,7 +42,6 @@ const SolarSystem = () => {
             });
             return newHistory;
           });
-          const passedTime = 1 * 24 * 60 * 60 * 1000;
           setDate((d) => new Date(d.getTime() + passedTime));
         } catch (err) {
           console.error(err);
@@ -50,15 +53,44 @@ const SolarSystem = () => {
   }, [started, paused, date]);
 
   return (
-    <div className="p-6 text-white">
-      <div className="mb-4">
+    <div className="p-6 text-white space-y-6">
+      <div className="flex flex-wrap items-center gap-4 bg-zinc-900 p-4 rounded-xl shadow-inner">
+        
+        {/* Bouton lecture/pause */}
         <button
           onClick={() => setPaused(!paused)}
-          className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500 transition"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-500 transition"
         >
-          {paused ? '▶ Reprendre' : '⏸ Pause'}
+          {paused ? (
+            <>
+              <span className="text-lg">▶</span> Reprendre
+            </>
+          ) : (
+            <>
+              <span className="text-lg">⏸</span> Pause
+            </>
+          )}
         </button>
+
+        <div className="flex items-center gap-4 text-sm text-gray-300 font-mono">
+          {/* Date formatée */}
+          <span>
+            {String(date.getUTCDate()).padStart(2, '0')}/
+            {String(date.getUTCMonth() + 1).padStart(2, '0')}/
+            {date.getUTCFullYear()}
+          </span>
+
+          {/* Sélecteur de pas */}
+          <div className="flex items-center gap-2">
+            <TimeStepSelector
+              initialValue={1}
+              initialUnit="day"
+              onChange={(s) => setPassedTime(s * 1000)}
+            />
+          </div>
+        </div>
       </div>
+
       <SolarSystem3D celestItems={celestItems} orbitHistory={orbitHistory} />
     </div>
   );
