@@ -86,9 +86,11 @@ impl Simulator {
         .par_iter_mut()
         .zip(accelerations.par_iter())
         .for_each(|(celestItem, acc)| {
-          for k in 0..3 {
-            celestItem.velocity[k] += sign * acc[k] * dt;
-            celestItem.position[k] += sign * celestItem.velocity[k] * dt;
+          if celestItem.name != "Soleil" {
+            for k in 0..3 {
+              celestItem.velocity[k] += sign * acc[k] * dt;
+              celestItem.position[k] += sign * celestItem.velocity[k] * dt;
+            }
           }
         });
     }
